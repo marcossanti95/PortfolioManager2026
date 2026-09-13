@@ -129,4 +129,4 @@ La aplicación está desplegada en **PythonAnywhere** (plan gratuito), corriendo
 
 ## Capturas de pantalla
 
-*(Agregar aquí las capturas: panel de administración, pantalla de login, registro de usuario, dashboard con carteras, formulario de carga de activo, detalle de cartera con valores calculados.)*
+Las capturas de pantalla que evidencian el funcionamiento de la aplicación están disponibles en la presentación de Google Slides de la entrega final: https://docs.google.com/presentation/d/1gLr5qHm66TgpqbGxo4KbkegtPYXdHonQbHPBYGNX2SU/edit?usp=sharing
