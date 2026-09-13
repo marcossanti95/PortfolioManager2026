@@ -1,117 +1,132 @@
-# Financial Portfolio Analyzer
+# Portfolio Analyzer
 
-Proyecto final del curso de Python (Coderhouse). Programa de consola que permite cargar activos financieros, agruparlos en una cartera, asociarla a un cliente y exportar un resumen a un archivo de texto.
+Proyecto final del curso de Python (Coderhouse). Aplicación web desarrollada con **Django** que permite a un usuario registrarse, crear carteras de inversión y cargar activos financieros (renta variable y renta fija), calculando automáticamente el valor de cada uno y el valor total de la cartera.
 
-El proyecto está pensado como base para una futura migración a **Django**, por lo que la organización en paquetes (`models/`, `utils/`) replica intencionalmente las convenciones de ese framework.
+El proyecto nació como un ejercicio de consola en Python puro, aplicando Programación Orientada a Objetos (clases, herencia, herencia múltiple, polimorfismo, encapsulamiento, agregación y asociación), y fue migrado a Django reutilizando esa misma lógica de negocio como base de los modelos.
+
+**🔗 URL pública:** https://arcemarcos95.pythonanywhere.com
+
+## Descripción del proyecto
+
+- **Propósito:** ofrecer una herramienta simple para registrar y calcular el valor de una cartera de inversión compuesta por distintos tipos de activos.
+- **Problema que resuelve:** llevar el control manual de una cartera (en Excel u otro medio) es propenso a errores, sobre todo al mezclar instrumentos con distinta lógica de valuación (por ejemplo, acciones vs. bonos, donde estos últimos cotizan cada 100 nominales en Argentina).
+- **Funcionalidades principales:** registro y login de usuarios, creación de múltiples carteras por usuario, carga de activos de renta variable y renta fija con validación de datos, cálculo automático del valor de cada activo y del total de la cartera, panel de administración para gestión completa de los datos.
+- **Usuario objetivo:** cualquier persona que quiera llevar un registro simple y ordenado de su cartera de inversión, sin necesidad de planillas de cálculo.
 
 ## Estructura del proyecto
 
 ```
 trabajo_final_coder/
 │
-├── main.py                  # Punto de entrada. Orquesta la carga de datos y el flujo del programa.
+├── manage.py                 # Punto de entrada de Django
+├── config/                   # Configuración del proyecto (settings, urls)
+├── portfolio/                 # App principal
+│   ├── models.py              # Perfil, Cartera, Activo, ActivoRentaVariable, ActivoRentaFija
+│   ├── views.py                # Registro, dashboard, alta de carteras y activos
+│   ├── forms.py                # Formularios con validación
+│   ├── admin.py                # Registro de modelos en el panel admin
+│   └── urls.py
+├── templates/                 # Templates HTML (Bootstrap)
 │
-├── utils/
-│   └── validaciones.py      # Funciones de validación de entrada por teclado (pedir_numero).
+├── main.py                    # Versión previa en Python puro (POO), sin Django
+├── models/                    # Clases originales: Activo, Cartera, Cliente
+├── utils/                      # Validaciones reutilizadas en el proyecto Django
 │
-├── models/
-│   ├── activo.py             # Clases Activo, ActivoRentaVariable, ActivoRentaFija.
-│   ├── cartera.py            # Clases Cartera, Exportable, CarteraExportable.
-│   └── cliente.py            # Clase Cliente.
-│
-├── cartera.txt               # Archivo generado al exportar la cartera (se sobreescribe en cada ejecución).
-└── requirements.txt
+├── requirements.txt
+└── README.md
 ```
 
-## Cómo ejecutarlo
+## Funcionalidades principales
 
-1. Activar el entorno virtual:
-   ```
-   .\env\Scripts\activate
-   ```
-2. Ejecutar el programa:
-   ```
-   python main.py
-   ```
-3. Cargar activos ingresando ticker, tipo (Renta Variable / Renta Fija), cantidad, precio y moneda. Escribir `salir` para terminar la carga.
-4. Al finalizar, el programa muestra el resumen por consola y genera/actualiza `cartera.txt`.
+### Panel de administración
+Acceso completo a los cuatro modelos del proyecto (Perfiles, Carteras, Activos de renta variable y renta fija) para gestión y auditoría de datos. Disponible en `/admin/`.
 
-## Diseño de clases
+### Registro y autenticación de usuarios
+Cualquier persona puede crear una cuenta desde `/registro/`. Al registrarse, se crea automáticamente un `Perfil` asociado. El sistema de login/logout usa la autenticación estándar de Django.
+
+### Dashboard y carteras
+Cada usuario ve únicamente sus propias carteras. Desde el dashboard puede crear nuevas carteras y acceder al detalle de cada una.
+
+### Carga de activos con validación
+Dentro de cada cartera se pueden agregar activos de dos tipos:
+- **Renta Variable:** el valor se calcula como `cantidad × precio`.
+- **Renta Fija:** el valor se calcula como `(cantidad × precio) / 100`, replicando la convención argentina de cotización de bonos cada 100 nominales.
+
+Los formularios validan que cantidad y precio sean valores positivos, rechazando datos inválidos con un mensaje de error claro.
+
+## Diseño de clases (heredado del proyecto de POO)
 
 ```
-Activo (clase base)
-├── ActivoRentaVariable   → hereda de Activo
-└── ActivoRentaFija       → hereda de Activo, sobreescribe calcular_valor()
-
-Exportable                → clase independiente, aporta exportar_txt()
+Activo (clase abstracta)
+├── ActivoRentaVariable
+└── ActivoRentaFija       → sobreescribe calcular_valor() (polimorfismo)
 
 Cartera
-└── CarteraExportable     → hereda de Cartera y de Exportable (herencia múltiple)
+└── contiene Activos (agregación)
 
-Cliente                   → asociado a una o más Carteras
+Perfil (extiende User de Django)
+└── asociado a Carteras (asociación)
 ```
 
-### Activo
-
-Clase base con los datos comunes a cualquier instrumento financiero: `ticker`, `cantidad`, `precio` y `moneda`. Los atributos `cantidad` y `precio` están encapsulados (`__cantidad`, `__precio`) y solo se modifican a través de `set_cantidad()` / `set_precio()`, que validan que el valor sea positivo antes de guardarlo.
-
-- `calcular_valor()`: devuelve `cantidad * precio`.
-- `__str__()`: representación legible del activo.
-
-### ActivoRentaVariable
-
-Hereda todo de `Activo` sin modificar ningún comportamiento. Representa acciones u otros instrumentos donde el precio se cotiza por unidad.
-
-### ActivoRentaFija
-
-Hereda de `Activo` pero **sobreescribe `calcular_valor()`**, ya que en Argentina los bonos cotizan cada 100 nominales (por ejemplo, un precio de 58 significa USD 58 cada 100 nominales, no USD 58 por unidad). El cálculo queda `(precio * cantidad) / 100`.
-
-Esta diferencia de comportamiento entre `ActivoRentaVariable` y `ActivoRentaFija` bajo el mismo método `calcular_valor()` es el ejemplo de **polimorfismo** del proyecto: al recorrer una cartera con activos mezclados, cada objeto resuelve su propio cálculo sin necesidad de preguntar de qué tipo es.
-
-### Cartera
-
-Contiene una lista de objetos `Activo` (o subclases). Un activo puede existir de forma independiente a una cartera, por lo que la relación es de **agregación**.
-
-- `agregar_activo(activo)`: agrega un activo ya creado a la lista interna.
-- `valor_total()`: suma `calcular_valor()` de todos los activos.
-- `mostrar_resumen()`: imprime la cartera por consola.
-- `__str__()`: representación completa de la cartera, usada también al exportar.
-
-### Exportable
-
-Clase independiente, sin relación con la jerarquía de `Activo` ni con `Cartera`. Aporta un único método, `exportar_txt(nombre_archivo)`, que escribe `str(self)` en un archivo de texto (codificado en UTF-8).
-
-### CarteraExportable
-
-Hereda simultáneamente de `Cartera` y de `Exportable`, combinando ambos comportamientos sin que ninguna de las dos clases originales dependa de la otra. Es el ejemplo de **herencia múltiple** del proyecto.
-
-### Cliente
-
-Mantiene una lista de carteras asociadas. A diferencia de la relación `Cartera`-`Activo`, una `Cartera` no depende de un `Cliente` para existir ni es "parte" de él — por eso esta relación es de **asociación** y no de agregación.
-
-- `agregar_cartera(cartera)`: vincula una cartera existente al cliente.
-- `valor_total_cliente()`: suma `valor_total()` de todas las carteras asociadas.
-
-## Conceptos de POO cubiertos
-
-| Concepto | Dónde se aplica |
+| Concepto de POO | Dónde se aplica |
 |---|---|
-| Clase / Atributo / Objeto | `Activo`, `Cartera`, `Cliente`, `Exportable` y sus instancias |
-| Constructor (`__init__`) | En todas las clases |
-| Instanciación | Creación de objetos en `main.py` (ej: `ActivoRentaFija(...)`) |
-| Encapsulamiento | Atributos `__precio` / `__cantidad` en `Activo`, accedidos vía `get_/set_` |
+| Clase / Atributo / Objeto | Modelos de `portfolio/models.py` |
 | Herencia | `ActivoRentaVariable` y `ActivoRentaFija` heredan de `Activo` |
-| Herencia múltiple | `CarteraExportable` hereda de `Cartera` y `Exportable` |
-| Polimorfismo | `calcular_valor()` se comporta distinto en renta variable vs. renta fija |
+| Polimorfismo | `calcular_valor()` se comporta distinto según el tipo de activo |
+| Encapsulamiento | Validadores en los campos del modelo (`MinValueValidator`) |
 | Agregación | `Cartera` contiene una lista de `Activo` |
-| Asociación | `Cliente` está vinculado a `Cartera` sin contenerla |
+| Asociación | `Perfil` vinculado a `Cartera` |
 
-## Validaciones
+*(La versión original en Python puro, con herencia múltiple explícita mediante una clase `Exportable`, se conserva en `main.py`, `models/` y `utils/` como referencia del proceso de aprendizaje previo a la migración a Django.)*
 
-`utils/validaciones.py` centraliza la función `pedir_numero(mensaje, permitir_negativos=False)`, que valida por consola que el dato ingresado sea numérico (`ValueError`) y que cumpla la regla de negocio correspondiente (no acepta valores menores o iguales a cero, salvo que se indique explícitamente `permitir_negativos=True`).
+## Cómo ejecutar el proyecto localmente
 
-La carga de moneda (`ARS` / `USD`) se valida con su propio bucle en `main.py`, rechazando cualquier valor fuera de esas dos opciones.
+**Requisitos previos:** Python 3.10 o superior.
 
-## Próximos pasos
+1. Cloná el repositorio:
+   ```
+   git clone https://github.com/marcossanti95/PortfolioManager2026.git
+   cd PortfolioManager2026
+   ```
 
-La organización actual en `models/` y `utils/` está pensada para facilitar la migración a Django: las clases de `models/` se convertirían en modelos de Django (`models.Model`), reutilizando gran parte de la lógica y validaciones ya definidas.
+2. Creá y activá un entorno virtual:
+   ```
+   python -m venv env
+   .\env\Scripts\activate      # Windows
+   source env/bin/activate     # Linux/Mac
+   ```
+
+3. Instalá las dependencias:
+   ```
+   pip install -r requirements.txt
+   ```
+
+4. Aplicá las migraciones:
+   ```
+   python manage.py migrate
+   ```
+
+5. Creá un superusuario (opcional, para acceder al panel admin):
+   ```
+   python manage.py createsuperuser
+   ```
+
+6. Ejecutá el servidor de desarrollo:
+   ```
+   python manage.py runserver
+   ```
+
+7. Abrí en el navegador:
+   ```
+   http://127.0.0.1:8000/
+   ```
+
+## Despliegue
+
+La aplicación está desplegada en **PythonAnywhere** (plan gratuito), corriendo con Python 3.12 sobre un entorno virtual dedicado. El proyecto se despliega clonando el repositorio directamente desde GitHub, configurando el entorno virtual, aplicando migraciones y sirviendo los archivos estáticos mediante `collectstatic`.
+
+**URL pública:** https://arcemarcos95.pythonanywhere.com
+
+## Capturas de pantalla
+
+*(Agregar aquí las capturas: panel de administración, pantalla de login, registro de usuario, dashboard con carteras, formulario de carga de activo, detalle de cartera con valores calculados.)*
