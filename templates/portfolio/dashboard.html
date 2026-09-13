@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Mis carteras</h2>
+    <a href="{% url 'crear_cartera' %}" class="btn btn-primary">+ Nueva cartera</a>
+</div>
+
+{% if carteras %}
+    <div class="row">
+        {% for cartera in carteras %}
+            <div class="col-md-4 mb-3">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ cartera.nombre }}</h5>
+                        <p class="card-text text-muted">Creada el {{ cartera.fecha_creacion|date:"d/m/Y" }}</p>
+                        <p class="card-text"><strong>Valor total: {{ cartera.valor_total|floatformat:2 }}</strong></p>
+                        <a href="{% url 'detalle_cartera' cartera.id %}" class="btn btn-outline-primary btn-sm">Ver detalle</a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <p class="text-muted">Todavía no tenés carteras cargadas. Creá la primera con el botón de arriba.</p>
+{% endif %}
+{% endblock %}

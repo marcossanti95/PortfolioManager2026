@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>{{ cartera.nombre }}</h2>
+    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary btn-sm">&larr; Volver</a>
+</div>
+
+<div class="mb-3">
+    <a href="{% url 'agregar_activo' cartera.id 'variable' %}" class="btn btn-success btn-sm">+ Renta Variable</a>
+    <a href="{% url 'agregar_activo' cartera.id 'fija' %}" class="btn btn-success btn-sm">+ Renta Fija</a>
+</div>
+
+{% if activos %}
+<table class="table table-bordered bg-white">
+    <thead class="table-dark">
+        <tr>
+            <th>Ticker</th>
+            <th>Tipo</th>
+            <th>Cantidad</th>
+            <th>Precio</th>
+            <th>Moneda</th>
+            <th>Valor</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for activo in activos %}
+        <tr>
+            <td>{{ activo.ticker }}</td>
+            <td>{{ activo.get_tipo }}</td>
+            <td>{{ activo.cantidad }}</td>
+            <td>{{ activo.precio }}</td>
+            <td>{{ activo.moneda }}</td>
+            <td>{{ activo.calcular_valor|floatformat:2 }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<h4>Valor total de la cartera: {{ cartera.valor_total|floatformat:2 }}</h4>
+{% else %}
+<p class="text-muted">Esta cartera todavía no tiene activos cargados.</p>
+{% endif %}
+{% endblock %}

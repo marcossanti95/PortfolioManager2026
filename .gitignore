@@ -11,3 +11,5 @@ __pycache__/
 
 # Archivos generados por el programa
 cartera.txt
+
+staticfiles/
